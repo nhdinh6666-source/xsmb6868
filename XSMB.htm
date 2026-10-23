@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tính Tiền & Dò Kết Quả XSMB - Quản Lý Tỷ Lệ Tùy Chỉnh</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+    body { font-family: 'Roboto', sans-serif; }
+    .prize-box { background-color: #f8fafc; border: 1px solid #e2e8f0; }
+    .prize-db { background-color: #fef2f2; border: 1px solid #fca5a5; color: #dc2626; font-weight: bold; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 pb-12">
+
+  <!-- Header -->
+  <header class="bg-red-700 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-2">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-chart-line text-2xl text-yellow-300"></i>
+        <div>
+          <h1 class="text-xl font-bold uppercase tracking-wide">Tính Tiền & Dò KQ XSMB</h1>
+          <p class="text-xs text-red-100">Đề 0.85 ăn 80 - Xiên & 3 Càng 0.75 - Quản lý 1 tháng</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-xs font-semibold whitespace-nowrap">Ngày chọn:</label>
+        <input type="date" id="selectedDate" onchange="renderAll()" class="bg-red-800 text-white px-3 py-1.5 rounded border border-red-600 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-400">
+        <button onclick="fetchResultForDate()" class="bg-yellow-500 hover:bg-yellow-600 text-red-950 font-bold px-3 py-1.5 rounded text-sm transition flex items-center gap-1">
+          <i class="fa-solid fa-sync"></i> Đặt KQ
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: Config & Players & Input (5 Cols) -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- Player Management Card -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-800 text-white px-4 py-3 font-semibold flex justify-between items-center text-sm">
+          <span><i class="fa-solid fa-users mr-2 text-yellow-400"></i>Danh Sách Người Chơi / Khách</span>
+          <span id="playerCountBadge" class="bg-slate-700 text-xs text-yellow-300 px-2 py-0.5 rounded-full">0 người</span>
+        </div>
+        <div class="p-4 space-y-3">
+          <div class="flex gap-2">
+            <input type="text" id="newPlayerName" placeholder="Tên người chơi mới (VD: Anh Nam, Chị Mai...)" class="flex-1 border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+            <button onclick="addPlayer()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded text-sm font-medium transition flex items-center gap-1">
+              <i class="fa-solid fa-plus"></i> Thêm
+            </button>
+          </div>
+          <div id="playersTagList" class="flex flex-wrap gap-1.5 pt-1">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Custom Pricing Config Card -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-slate-800 text-white px-4 py-3 font-semibold flex justify-between items-center text-sm">
+          <span><i class="fa-solid fa-sliders mr-2 text-yellow-400"></i>Tùy Chỉnh Giá Xác & Tỷ Lệ Thưởng</span>
+          <button onclick="togglePricingConfig()" class="text-xs text-slate-300 hover:text-white underline">
+            <span id="togglePricingBtnText">Thu gọn</span>
+          </button>
+        </div>
+        <div id="pricingConfigBody" class="p-4 space-y-3 text-sm">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Giá 1 điểm Lô (VNĐ)</label>
+              <input type="number" id="priceLo" value="23000" step="500" class="w-full border border-slate-300 rounded px-2.5 py-1.5 focus:ring-1 focus:ring-red-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tiền trúng 1 điểm Lô</label>
+              <input type="number" id="winLo" value="80000" step="1000" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold text-emerald-700">
+            </div>
+
+            <!-- Đề Section -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Hệ số xác Đề (0.85)</label>
+              <input type="number" id="rateDe" value="0.85" step="0.01" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold text-indigo-600">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tỷ lệ Đề (1 ăn ?)</label>
+              <input type="number" id="winDe" value="80" step="1" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold text-red-600">
+            </div>
+
+            <!-- 3 Càng Section -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Hệ số xác 3 Càng (0.75)</label>
+              <input type="number" id="rate3Cang" value="0.75" step="0.01" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold text-indigo-600">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tỷ lệ 3 Càng (1 ăn ?)</label>
+              <input type="number" id="win3Cang" value="400" step="10" class="w-full border border-slate-300 rounded px-2.5 py-1.5">
+            </div>
+
+            <!-- Xiên Section -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Hệ số xác Xiên (0.75)</label>
+              <input type="number" id="rateXien" value="0.75" step="0.01" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-bold text-indigo-600">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tỷ lệ Xiên 2 (1 ăn ?)</label>
+              <input type="number" id="winXien2" value="10" step="0.5" class="w-full border border-slate-300 rounded px-2.5 py-1.5">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tỷ lệ Xiên 3 (1 ăn ?)</label>
+              <input type="number" id="winXien3" value="40" step="1" class="w-full border border-slate-300 rounded px-2.5 py-1.5">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tỷ lệ Xiên 4 (1 ăn ?)</label>
+              <input type="number" id="winXien4" value="100" step="5" class="w-full border border-slate-300 rounded px-2.5 py-1.5">
+            </div>
+          </div>
+          <button onclick="savePricingConfig()" class="w-full bg-slate-700 hover:bg-slate-800 text-white font-medium py-1.5 rounded text-xs transition">
+            Lưu Cài Đặt Tỷ Lệ
+          </button>
+        </div>
+      </div>
+
+      <!-- Ticket Entry Form -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-red-700 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center">
+          <span><i class="fa-solid fa-pen-to-square mr-2"></i>Nhập Số Đánh Trong Ngày</span>
+          <span class="text-xs text-red-200">Chọn đúng người chơi</span>
+        </div>
+        <div class="p-4 space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Người chơi / Khách hàng:</label>
+            <select id="ticketPlayerSelect" class="w-full border border-slate-300 rounded px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-red-500 bg-amber-50">
+              <!-- Rendered by JS -->
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Loại hình cược</label>
+              <select id="ticketType" onchange="handleBetTypeChange()" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-red-500">
+                <option value="lo">Lô (Đơn vị: Điểm)</option>
+                <option value="de">Đề (0.85 ăn 80)</option>
+                <option value="3cang">3 Càng (0.75)</option>
+                <option value="xien2">Xiên 2 (0.75)</option>
+                <option value="xien3">Xiên 3 (0.75)</option>
+                <option value="xien4">Xiên 4 (0.75)</option>
+              </select>
+            </div>
+            <div>
+              <label id="amountLabel" class="block text-xs font-semibold text-slate-600 mb-1">Số điểm đánh</label>
+              <input type="number" id="ticketAmount" placeholder="VD: 100000" class="w-full border border-slate-300 rounded px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-red-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">
+              Danh sách số <span id="numberInputHint" class="text-slate-400 font-normal">(phân cách bằng dấu phẩy, khoảng trắng)</span>
+            </label>
+            <textarea id="ticketNumbers" rows="3" placeholder="Ví dụ: 12, 45, 88 hoặc 12 45 88" class="w-full border border-slate-300 rounded px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-red-500"></textarea>
+          </div>
+
+          <button onclick="addBetTicket()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg text-sm transition shadow-sm flex items-center justify-center gap-2">
+            <i class="fa-solid fa-plus-circle"></i> Thêm Vào Bảng Cược Ngày
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: Monthly Report & Daily Breakdown (7 Cols) -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- MONTHLY REPORT CARD -->
+      <div class="bg-white rounded-xl shadow-sm border-2 border-indigo-200 p-4 bg-gradient-to-br from-indigo-50/40 to-white">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-bold text-indigo-900"><i class="fa-solid fa-calendar-check text-indigo-600 mr-2"></i>Thống Kê Thắng Thua Theo Tháng</h2>
+            <p class="text-xs text-indigo-600">Tự động cộng dồn theo xác và thưởng thực tế</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-indigo-900">Tháng:</label>
+            <input type="month" id="selectedMonth" onchange="renderAll()" class="border border-indigo-300 rounded px-2.5 py-1 text-sm font-bold bg-white focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="overflow-x-auto rounded-lg border border-indigo-100 bg-white">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="bg-indigo-900 text-white">
+                <th class="p-2.5 font-bold">Người chơi</th>
+                <th class="p-2.5 font-bold text-right">Tổng Xác (Sau Giảm)</th>
+                <th class="p-2.5 font-bold text-right">Tổng Tiền Trúng</th>
+                <th class="p-2.5 font-bold text-right">Lãi / Lỗ Ròng</th>
+              </tr>
+            </thead>
+            <tbody id="monthlySummaryTbody" class="divide-y divide-indigo-50">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DAILY REPORT & TICKETS -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-800"><i class="fa-solid fa-calculator text-red-600 mr-2"></i>Báo Cáo Chi Tiết Ngày <span id="summaryDateStr" class="font-bold text-red-600"></span></h2>
+            <p class="text-xs text-slate-500">Dò tự động theo 27 giải XSMB</p>
+          </div>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <label class="text-xs font-bold text-slate-600 whitespace-nowrap">Lọc người chơi:</label>
+            <select id="playerFilter" onchange="renderAll()" class="border border-slate-300 rounded px-2.5 py-1 text-sm font-semibold bg-slate-50 focus:ring-2 focus:ring-red-500 flex-1 sm:flex-none">
+              <option value="ALL">-- Tất cả người chơi --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Daily Summary Statistics -->
+        <div class="grid grid-cols-3 gap-3 text-center mb-4">
+          <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <p class="text-xs text-slate-500 font-medium mb-1">Tổng Xác Ngày</p>
+            <p id="totalStakeDisplay" class="text-base sm:text-lg font-bold text-slate-800">0 đ</p>
+          </div>
+          <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+            <p class="text-xs text-emerald-600 font-medium mb-1">Tổng Trúng Ngày</p>
+            <p id="totalWinDisplay" class="text-base sm:text-lg font-bold text-emerald-700">0 đ</p>
+          </div>
+          <div id="netProfitBox" class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+            <p class="text-xs text-slate-500 font-medium mb-1">Lãi / Lỗ Ngày</p>
+            <p id="netProfitDisplay" class="text-base sm:text-lg font-bold text-slate-800">0 đ</p>
+          </div>
+        </div>
+
+        <!-- Tickets Detailed Table -->
+        <div class="border rounded-lg overflow-hidden">
+          <div class="bg-slate-800 text-white px-3 py-2 font-semibold text-xs flex justify-between items-center">
+            <span><i class="fa-solid fa-receipt mr-1.5 text-yellow-400"></i>Danh Sách Phiếu Đánh Trong Ngày</span>
+            <button onclick="clearAllTicketsForDate()" class="text-xs text-red-300 hover:text-red-100 underline">Xóa hết số ngày này</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-600 border-b border-slate-200">
+                  <th class="p-2 font-bold">Người chơi</th>
+                  <th class="p-2 font-bold">Loại</th>
+                  <th class="p-2 font-bold">Số đánh</th>
+                  <th class="p-2 font-bold text-right">Số tiền mặt</th>
+                  <th class="p-2 font-bold text-right">Tiền xác thực</th>
+                  <th class="p-2 font-bold text-center">Kết quả</th>
+                  <th class="p-2 font-bold text-right">Tiền thắng</th>
+                  <th class="p-2 font-bold text-center">Xóa</th>
+                </tr>
+              </thead>
+              <tbody id="ticketsTbody" class="divide-y divide-slate-100">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- XSMB Result Table (27 Prizes) -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-red-800 text-white px-4 py-3 font-semibold text-sm flex justify-between items-center">
+          <span><i class="fa-solid fa-trophy mr-2 text-yellow-300"></i>Kết Quả XSMB 27 Giải Ngày <span id="resultDateBadge">--/--/----</span></span>
+          <button onclick="toggleEditResultModal()" class="bg-red-900 hover:bg-red-950 text-xs px-2.5 py-1 rounded text-yellow-200 border border-red-700">
+            <i class="fa-solid fa-pen"></i> Sửa KQ Giải
+          </button>
+        </div>
+        <div class="p-4 space-y-2 text-sm" id="resultBoardContainer">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Edit Result Modal -->
+  <div id="editResultModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <h3 class="font-bold text-lg text-slate-800">Chỉnh Sửa Kết Quả XSMB Ngày Đang Chọn</h3>
+        <button onclick="toggleEditResultModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <p class="text-xs text-slate-500">Cập nhật đúng 27 giải quay thưởng của Xổ số Miền Bắc.</p>
+      <div class="space-y-3 text-xs" id="editResultForm">
+        <!-- JS Rendered Inputs -->
+      </div>
+      <div class="flex justify-end gap-2 border-t pt-4">
+        <button onclick="toggleEditResultModal()" class="px-4 py-2 border rounded text-slate-600 hover:bg-slate-50 text-sm font-medium">Hủy</button>
+        <button onclick="saveManualResults()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-sm font-bold">Lưu Kết Quả</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Application Logic -->
+  <script>
+    // --- APP STATE & STORAGE ---
+    const STORAGE_KEY = 'XSMB_APP_DATA_V4';
+
+    let appState = {
+      pricing: {
+        priceLo: 23000,
+        winLo: 80000,
+        rateDe: 0.85,      // Đề 0.85
+        winDe: 80,         // Ăn 80
+        rate3Cang: 0.75,   // 3 Càng 0.75
+        win3Cang: 400,
+        rateXien: 0.75,    // Xiên 0.75
+        winXien2: 10,
+        winXien3: 40,
+        winXien4: 100
+      },
+      players: ['Khách Víp A', 'Anh Bảy', 'Chị Mai'],
+      tickets: [],
+      resultsByDate: {}
+    };
+
+    const DEFAULT_22102026_RESULT = {
+      DB: ['25814'],
+      G1: ['12613'],
+      G2: ['02537', '15905'],
+      G3: ['19974', '68554', '91512', '60166', '90697', '22343'],
+      G4: ['9631', '5856', '6546', '2861'],
+      G5: ['2064', '8820', '1891', '7956', '7998', '8415'],
+      G6: ['759', '199', '732'],
+      G7: ['75', '17', '82', '21']
+    };
+
+    // --- INIT APP ---
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+
+      const today = new Date().toISOString().split('T')[0];
+      const currentMonth = today.slice(0, 7);
+
+      document.getElementById('selectedDate').value = today;
+      document.getElementById('selectedMonth').value = currentMonth;
+
+      if (!appState.resultsByDate['2026-10-22']) {
+        appState.resultsByDate['2026-10-22'] = DEFAULT_22102026_RESULT;
+      }
+      if (!appState.resultsByDate[today]) {
+        appState.resultsByDate[today] = DEFAULT_22102026_RESULT;
+      }
+
+      saveState();
+      populatePricingInputs();
+      renderAll();
+    });
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          appState = { ...appState, ...JSON.parse(saved) };
+        } catch (e) { console.error('Failed to parse state', e); }
+      }
+    }
+
+    // --- PRICING CONFIG ---
+    function togglePricingConfig() {
+      const body = document.getElementById('pricingConfigBody');
+      const btnText = document.getElementById('togglePricingBtnText');
+      if (body.classList.contains('hidden')) {
+        body.classList.remove('hidden');
+        btnText.innerText = 'Thu gọn';
+      } else {
+        body.classList.add('hidden');
+        btnText.innerText = 'Mở rộng';
+      }
+    }
+
+    function populatePricingInputs() {
+      document.getElementById('priceLo').value = appState.pricing.priceLo;
+      document.getElementById('winLo').value = appState.pricing.winLo;
+      document.getElementById('rateDe').value = appState.pricing.rateDe;
+      document.getElementById('winDe').value = appState.pricing.winDe;
+      document.getElementById('rate3Cang').value = appState.pricing.rate3Cang;
+      document.getElementById('win3Cang').value = appState.pricing.win3Cang;
+      document.getElementById('rateXien').value = appState.pricing.rateXien;
+      document.getElementById('winXien2').value = appState.pricing.winXien2;
+      document.getElementById('winXien3').value = appState.pricing.winXien3;
+      document.getElementById('winXien4').value = appState.pricing.winXien4;
+    }
+
+    function savePricingConfig() {
+      appState.pricing.priceLo = parseFloat(document.getElementById('priceLo').value) || 23000;
+      appState.pricing.winLo = parseFloat(document.getElementById('winLo').value) || 80000;
+      appState.pricing.rateDe = parseFloat(document.getElementById('rateDe').value) || 0.85;
+      appState.pricing.winDe = parseFloat(document.getElementById('winDe').value) || 80;
+      appState.pricing.rate3Cang = parseFloat(document.getElementById('rate3Cang').value) || 0.75;
+      appState.pricing.win3Cang = parseFloat(document.getElementById('win3Cang').value) || 400;
+      appState.pricing.rateXien = parseFloat(document.getElementById('rateXien').value) || 0.75;
+      appState.pricing.winXien2 = parseFloat(document.getElementById('winXien2').value) || 10;
+      appState.pricing.winXien3 = parseFloat(document.getElementById('winXien3').value) || 40;
+      appState.pricing.winXien4 = parseFloat(document.getElementById('winXien4').value) || 100;
+
+      saveState();
+      renderAll();
+      alert('Đã lưu cấu hình tỷ lệ thành công!');
+    }
+
+    // --- PLAYER MANAGEMENT ---
+    function addPlayer() {
+      const nameInput = document.getElementById('newPlayerName');
+      const name = nameInput.value.trim();
+      if (!name) return alert('Vui lòng nhập tên người chơi!');
+
+      if (appState.players.includes(name)) {
+        return alert('Người chơi này đã tồn tại!');
+      }
+
+      appState.players.push(name);
+      nameInput.value = '';
+      saveState();
+      renderAll();
+    }
+
+    function removePlayer(name) {
+      if (!confirm(`Xóa người chơi "${name}"? các số đánh cũ của người này vẫn giữ trong lịch sử.`)) return;
+      appState.players = appState.players.filter(p => p !== name);
+      saveState();
+      renderAll();
+    }
+
+    // --- BET ENTRY LOGIC ---
+    function handleBetTypeChange() {
+      const type = document.getElementById('ticketType').value;
+      const amountLabel = document.getElementById('amountLabel');
+      const numberInputHint = document.getElementById('numberInputHint');
+
+      if (type === 'lo') {
+        amountLabel.innerText = 'Số điểm đánh (mỗi số)';
+        numberInputHint.innerText = '(Nhập các cặp 2 số, ví dụ: 12, 45, 88)';
+      } else if (type === 'de') {
+        amountLabel.innerText = 'Mặt tiền đánh (mỗi số)';
+        numberInputHint.innerText = '(Đề tính xác 0.85 - ăn 80)';
+      } else if (type === '3cang') {
+        amountLabel.innerText = 'Mặt tiền đánh (mỗi số)';
+        numberInputHint.innerText = '(3 Càng tính xác 0.75)';
+      } else {
+        amountLabel.innerText = 'Mặt tiền đánh (cho cặp xiên)';
+        const count = type === 'xien2' ? 2 : type === 'xien3' ? 3 : 4;
+        numberInputHint.innerText = `(Xiên tính xác 0.75 - Nhập đúng ${count} cặp số)`;
+      }
+    }
+
+    function addBetTicket() {
+      const playerSelect = document.getElementById('ticketPlayerSelect');
+      const player = playerSelect.value;
+      const type = document.getElementById('ticketType').value;
+      const amount = parseFloat(document.getElementById('ticketAmount').value);
+      const rawNumbers = document.getElementById('ticketNumbers').value;
+      const date = document.getElementById('selectedDate').value;
+
+      if (!player) return alert('Vui lòng chọn người chơi!');
+      if (!amount || amount <= 0) return alert('Vui lòng nhập số tiền / điểm cược hợp lệ!');
+      if (!rawNumbers.trim()) return alert('Vui lòng nhập danh sách số đánh!');
+
+      let parsedList = [];
+
+      if (type.startsWith('xien')) {
+        const items = rawNumbers.split(/[\n;]/).map(s => s.trim()).filter(Boolean);
+        items.forEach(item => {
+          const numbers = item.split(/[-,\s]+/).map(n => n.trim().padStart(2, '0')).filter(Boolean);
+          const reqCount = type === 'xien2' ? 2 : type === 'xien3' ? 3 : 4;
+          if (numbers.length === reqCount) {
+            parsedList.push(numbers.join('-'));
+          }
+        });
+        if (parsedList.length === 0) {
+          const numbers = rawNumbers.split(/[-,\s]+/).map(n => n.trim().padStart(2, '0')).filter(Boolean);
+          const reqCount = type === 'xien2' ? 2 : type === 'xien3' ? 3 : 4;
+          if (numbers.length === reqCount) {
+            parsedList.push(numbers.join('-'));
+          }
+        }
+      } else {
+        const tokens = rawNumbers.split(/[\s,\n;]+/).map(s => s.trim()).filter(Boolean);
+        const padLen = type === '3cang' ? 3 : 2;
+        parsedList = tokens.map(t => t.padStart(padLen, '0'));
+      }
+
+      if (parsedList.length === 0) {
+        return alert('Không tìm thấy bộ số hợp lệ. Vui lòng kiểm tra lại!');
+      }
+
+      parsedList.forEach(numStr => {
+        let stake = 0;
+        if (type === 'lo') {
+          stake = amount * appState.pricing.priceLo;
+        } else if (type === 'de') {
+          stake = amount * appState.pricing.rateDe; // 0.85
+        } else if (type === '3cang') {
+          stake = amount * appState.pricing.rate3Cang; // 0.75
+        } else if (type.startsWith('xien')) {
+          stake = amount * appState.pricing.rateXien; // 0.75
+        }
+
+        appState.tickets.push({
+          id: Date.now() + Math.random().toString(36).substr(2, 4),
+          player,
+          type,
+          number: numStr,
+          amount,
+          stake,
+          date
+        });
+      });
+
+      document.getElementById('ticketNumbers').value = '';
+      saveState();
+      renderAll();
+    }
+
+    function removeTicket(id) {
+      appState.tickets = appState.tickets.filter(t => t.id !== id);
+      saveState();
+      renderAll();
+    }
+
+    function clearAllTicketsForDate() {
+      const date = document.getElementById('selectedDate').value;
+      if (!confirm(`Xóa toàn bộ số đánh trong ngày ${formatDateStr(date)}?`)) return;
+      appState.tickets = appState.tickets.filter(t => t.date !== date);
+      saveState();
+      renderAll();
+    }
+
+    // --- RESULT EDIT & FETCH ---
+    function fetchResultForDate() {
+      const date = document.getElementById('selectedDate').value;
+      if (!appState.resultsByDate[date]) {
+        appState.resultsByDate[date] = DEFAULT_22102026_RESULT;
+      }
+      saveState();
+      renderAll();
+      alert(`Đã nạp kết quả XSMB ngày ${formatDateStr(date)}!`);
+    }
+
+    function toggleEditResultModal() {
+      const modal = document.getElementById('editResultModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderEditResultForm();
+      }
+    }
+
+    function renderEditResultForm() {
+      const date = document.getElementById('selectedDate').value;
+      const currentRes = appState.resultsByDate[date] || DEFAULT_22102026_RESULT;
+      const container = document.getElementById('editResultForm');
+
+      const prizeLabels = {
+        DB: 'Giải Đặc Biệt (1 giải 5 số)',
+        G1: 'Giải Nhất (1 giải 5 số)',
+        G2: 'Giải Nhì (2 giải 5 số)',
+        G3: 'Giải Ba (6 giải 5 số)',
+        G4: 'Giải Tư (4 giải 4 số)',
+        G5: 'Giải Năm (6 giải 4 số)',
+        G6: 'Giải Sáu (3 giải 3 số)',
+        G7: 'Giải Bảy (4 giải 2 số)'
+      };
+
+      let html = '';
+      Object.keys(prizeLabels).forEach(key => {
+        const val = (currentRes[key] || []).join(' - ');
+        html += `
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">${prizeLabels[key]}</label>
+            <input type="text" id="edit_${key}" value="${val}" class="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono">
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function saveManualResults() {
+      const date = document.getElementById('selectedDate').value;
+      const keys = ['DB', 'G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7'];
+      const newRes = {};
+
+      keys.forEach(k => {
+        const inputVal = document.getElementById(`edit_${k}`).value;
+        newRes[k] = inputVal.split(/[-,\s]+/).map(s => s.trim()).filter(Boolean);
+      });
+
+      appState.resultsByDate[date] = newRes;
+      saveState();
+      toggleEditResultModal();
+      renderAll();
+    }
+
+    // --- EVALUATION ENGINE ---
+    function evaluateTicket(ticket, resultObj) {
+      if (!resultObj) return { hits: 0, winAmount: 0 };
+
+      const allPrizes = [
+        ...(resultObj.DB || []),
+        ...(resultObj.G1 || []),
+        ...(resultObj.G2 || []),
+        ...(resultObj.G3 || []),
+        ...(resultObj.G4 || []),
+        ...(resultObj.G5 || []),
+        ...(resultObj.G6 || []),
+        ...(resultObj.G7 || [])
+      ];
+
+      const loto27 = allPrizes.map(p => p.slice(-2));
+      const dbNumber = (resultObj.DB && resultObj.DB[0]) ? resultObj.DB[0] : '';
+      const dbTail2 = dbNumber.slice(-2);
+      const dbTail3 = dbNumber.slice(-3);
+
+      let hits = 0;
+      let winAmount = 0;
+
+      if (ticket.type === 'lo') {
+        const target = ticket.number.padStart(2, '0');
+        hits = loto27.filter(num => num === target).length;
+        winAmount = hits * ticket.amount * appState.pricing.winLo;
+      } else if (ticket.type === 'de') {
+        const target = ticket.number.padStart(2, '0');
+        if (target === dbTail2) {
+          hits = 1;
+          winAmount = ticket.amount * appState.pricing.winDe; // 1 ăn 80
+        }
+      } else if (ticket.type === '3cang') {
+        const target = ticket.number.padStart(3, '0');
+        if (target === dbTail3) {
+          hits = 1;
+          winAmount = ticket.amount * appState.pricing.win3Cang;
+        }
+      } else if (ticket.type.startsWith('xien')) {
+        const reqNumbers = ticket.number.split('-');
+        const allMatched = reqNumbers.every(n => loto27.includes(n));
+        if (allMatched) {
+          hits = 1;
+          const rate = ticket.type === 'xien2' ? appState.pricing.winXien2 :
+                       ticket.type === 'xien3' ? appState.pricing.winXien3 : appState.pricing.winXien4;
+          winAmount = ticket.amount * rate;
+        }
+      }
+
+      return { hits, winAmount };
+    }
+
+    // --- RENDER ALL SECTIONS ---
+    function renderAll() {
+      const currentDate = document.getElementById('selectedDate').value;
+      const currentMonth = document.getElementById('selectedMonth').value;
+
+      document.getElementById('summaryDateStr').innerText = formatDateStr(currentDate);
+      document.getElementById('resultDateBadge').innerText = formatDateStr(currentDate);
+
+      renderPlayerTags();
+      renderPlayerDropdowns();
+      renderResultsBoard(currentDate);
+
+      renderMonthlySummary(currentMonth);
+
+      const selectedPlayer = document.getElementById('playerFilter').value;
+      const dateTickets = appState.tickets.filter(t => t.date === currentDate && (selectedPlayer === 'ALL' || t.player === selectedPlayer));
+      const currentResult = appState.resultsByDate[currentDate] || DEFAULT_22102026_RESULT;
+
+      renderTicketTable(dateTickets, currentResult);
+
+      let dailyStake = 0;
+      let dailyWin = 0;
+      dateTickets.forEach(t => {
+        dailyStake += t.stake;
+        dailyWin += evaluateTicket(t, currentResult).winAmount;
+      });
+      updateDailySummaryHeader(dailyStake, dailyWin);
+    }
+
+    function renderPlayerTags() {
+      const container = document.getElementById('playersTagList');
+      document.getElementById('playerCountBadge').innerText = `${appState.players.length} người`;
+
+      container.innerHTML = appState.players.map(p => `
+        <span class="inline-flex items-center gap-1.5 bg-slate-100 border border-slate-300 text-slate-700 px-2.5 py-1 rounded-full text-xs font-semibold">
+          <i class="fa-solid fa-user text-slate-400"></i> ${p}
+          <button onclick="removePlayer('${p}')" class="text-slate-400 hover:text-red-600 ml-1"><i class="fa-solid fa-xmark"></i></button>
+        </span>
+      `).join('');
+    }
+
+    function renderPlayerDropdowns() {
+      const ticketSelect = document.getElementById('ticketPlayerSelect');
+      const filterSelect = document.getElementById('playerFilter');
+      const currentFilterVal = filterSelect.value;
+
+      const optionsHtml = appState.players.map(p => `<option value="${p}">${p}</option>`).join('');
+      ticketSelect.innerHTML = optionsHtml.length ? optionsHtml : '<option value="">-- Tạo người chơi trước --</option>';
+
+      filterSelect.innerHTML = '<option value="ALL">-- Tất cả người chơi --</option>' + appState.players.map(p => `
+        <option value="${p}">${p}</option>
+      `).join('');
+
+      filterSelect.value = currentFilterVal;
+    }
+
+    function renderMonthlySummary(monthStr) {
+      const tbody = document.getElementById('monthlySummaryTbody');
+      const monthTickets = appState.tickets.filter(t => t.date && t.date.startsWith(monthStr));
+
+      let grandStake = 0;
+      let grandWin = 0;
+
+      const rows = appState.players.map(player => {
+        const pTickets = monthTickets.filter(t => t.player === player);
+        let pStake = 0;
+        let pWin = 0;
+
+        pTickets.forEach(t => {
+          pStake += t.stake;
+          const resObj = appState.resultsByDate[t.date] || DEFAULT_22102026_RESULT;
+          pWin += evaluateTicket(t, resObj).winAmount;
+        });
+
+        grandStake += pStake;
+        grandWin += pWin;
+
+        const pProfit = pWin - pStake;
+
+        return `
+          <tr class="hover:bg-indigo-50/50">
+            <td class="p-2.5 font-bold text-slate-800">${player}</td>
+            <td class="p-2.5 text-right font-medium text-slate-600">${formatMoney(pStake)}</td>
+            <td class="p-2.5 text-right font-semibold text-emerald-600">${formatMoney(pWin)}</td>
+            <td class="p-2.5 text-right font-bold ${pProfit > 0 ? 'text-emerald-600' : pProfit < 0 ? 'text-red-600' : 'text-slate-500'}">
+              ${pProfit > 0 ? '+' : ''}${formatMoney(pProfit)}
+            </td>
+          </tr>
+        `;
+      });
+
+      const grandProfit = grandWin - grandStake;
+
+      rows.push(`
+        <tr class="bg-indigo-100/70 font-bold border-t-2 border-indigo-200">
+          <td class="p-2.5 text-indigo-950">TỔNG CỘNG THÁNG ${monthStr.split('-').reverse().join('/')}</td>
+          <td class="p-2.5 text-right text-indigo-950">${formatMoney(grandStake)}</td>
+          <td class="p-2.5 text-right text-emerald-700">${formatMoney(grandWin)}</td>
+          <td class="p-2.5 text-right ${grandProfit > 0 ? 'text-emerald-700' : grandProfit < 0 ? 'text-red-700' : 'text-slate-700'}">
+            ${grandProfit > 0 ? '+' : ''}${formatMoney(grandProfit)}
+          </td>
+        </tr>
+      `);
+
+      tbody.innerHTML = rows.join('');
+    }
+
+    function renderTicketTable(tickets, resultObj) {
+      const tbody = document.getElementById('ticketsTbody');
+
+      if (tickets.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400 font-medium">Chưa có số đánh nào trong ngày này.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = tickets.map(t => {
+        const { hits, winAmount } = evaluateTicket(t, resultObj);
+        const isWin = winAmount > 0;
+
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="p-2 font-semibold text-slate-700">${t.player}</td>
+            <td class="p-2 uppercase font-bold text-xs text-slate-500">${t.type}</td>
+            <td class="p-2 font-mono font-bold text-red-700">${t.number}</td>
+            <td class="p-2 text-right">${t.type === 'lo' ? t.amount + ' điểm' : formatMoney(t.amount)}</td>
+            <td class="p-2 text-right font-medium text-indigo-900">${formatMoney(t.stake)}</td>
+            <td class="p-2 text-center">
+              ${isWin ? `<span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">Trúng (${hits}${t.type === 'lo' ? ' nháy' : ''})</span>` :
+                        `<span class="bg-slate-100 text-slate-400 px-2 py-0.5 rounded">Trượt</span>`}
+            </td>
+            <td class="p-2 text-right font-bold ${isWin ? 'text-emerald-600' : 'text-slate-400'}">${formatMoney(winAmount)}</td>
+            <td class="p-2 text-center">
+              <button onclick="removeTicket('${t.id}')" class="text-slate-300 hover:text-red-600"><i class="fa-solid fa-trash"></i></button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateDailySummaryHeader(stake, win) {
+      const net = win - stake;
+      document.getElementById('totalStakeDisplay').innerText = formatMoney(stake);
+      document.getElementById('totalWinDisplay').innerText = formatMoney(win);
+
+      const netDisplay = document.getElementById('netProfitDisplay');
+      const netBox = document.getElementById('netProfitBox');
+
+      netDisplay.innerText = (net > 0 ? '+' : '') + formatMoney(net);
+
+      if (net > 0) {
+        netDisplay.className = 'text-base sm:text-lg font-bold text-emerald-600';
+        netBox.className = 'bg-emerald-50 border border-emerald-200 rounded-lg p-3';
+      } else if (net < 0) {
+        netDisplay.className = 'text-base sm:text-lg font-bold text-red-600';
+        netBox.className = 'bg-red-50 border border-red-200 rounded-lg p-3';
+      } else {
+        netDisplay.className = 'text-base sm:text-lg font-bold text-slate-700';
+        netBox.className = 'bg-slate-50 border border-slate-200 rounded-lg p-3';
+      }
+    }
+
+    function renderResultsBoard(date) {
+      const res = appState.resultsByDate[date] || DEFAULT_22102026_RESULT;
+      const container = document.getElementById('resultBoardContainer');
+
+      container.innerHTML = `
+        <div class="prize-db p-2.5 rounded text-center">
+          <span class="text-xs text-red-500 font-semibold uppercase block mb-0.5">Giải Đặc Biệt</span>
+          <span class="text-xl sm:text-2xl tracking-widest font-mono font-black">${(res.DB || []).join(' - ') || '-----'}</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-center text-xs">
+          <div class="prize-box p-2 rounded">
+            <span class="text-slate-400 font-bold block mb-1">Giải Nhất</span>
+            <span class="font-mono font-bold text-sm text-slate-800">${(res.G1 || []).join(' - ')}</span>
+          </div>
+          <div class="prize-box p-2 rounded">
+            <span class="text-slate-400 font-bold block mb-1">Giải Nhì</span>
+            <span class="font-mono font-bold text-sm text-slate-800">${(res.G2 || []).join(' - ')}</span>
+          </div>
+        </div>
+        <div class="prize-box p-2 rounded text-center text-xs">
+          <span class="text-slate-400 font-bold block mb-1">Giải Ba (6 giải)</span>
+          <span class="font-mono font-bold text-sm text-slate-800 tracking-wider">${(res.G3 || []).join(' &nbsp;•&nbsp; ')}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center text-xs">
+          <div class="prize-box p-2 rounded">
+            <span class="text-slate-400 font-bold block mb-1">Giải Tư</span>
+            <span class="font-mono font-bold text-sm text-slate-800">${(res.G4 || []).join(' - ')}</span>
+          </div>
+          <div class="prize-box p-2 rounded">
+            <span class="text-slate-400 font-bold block mb-1">Giải Năm</span>
+            <span class="font-mono font-bold text-sm text-slate-800">${(res.G5 || []).join(' - ')}</span>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-center text-xs">
+          <div class="prize-box p-2 rounded">
+            <span class="text-slate-400 font-bold block mb-1">Giải Sáu</span>
+            <span class="font-mono font-bold text-sm text-slate-800">${(res.G6 || []).join(' - ')}</span>
+          </div>
+          <div class="prize-box p-2 rounded">
+            <span class="text-slate-400 font-bold block mb-1">Giải Bảy</span>
+            <span class="font-mono font-bold text-sm text-red-600">${(res.G7 || []).join(' - ')}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- UTILS ---
+    function formatMoney(amount) {
+      return new Intl.NumberFormat('vi-VN').format(Math.round(amount)) + ' đ';
+    }
+
+    function formatDateStr(dateStr) {
+      if (!dateStr) return '';
+      const [y, m, d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+  </script>
+</body>
+</html>
